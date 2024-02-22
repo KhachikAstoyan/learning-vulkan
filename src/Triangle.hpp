@@ -14,7 +14,7 @@ class Triangle {
 public:
     void run() {
         initWindow();
-        // initVulkan();
+        initVulkan();
         mainLoop();
         cleanup();
     };
@@ -41,8 +41,8 @@ private:
         glfwMakeContextCurrent(window);
     };
 
-    void initVulkan(){
-
+    void initVulkan() {
+        createInstance();
     };
 
     void createInstance() {
@@ -96,6 +96,7 @@ private:
 
     void cleanup() {
         vkDestroyInstance(instance, nullptr);
+
         glfwDestroyWindow(window);
         glfwTerminate();
     }
