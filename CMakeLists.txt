@@ -9,6 +9,11 @@ set(CMAKE_CXX_FLAGS "-Wall -Wextra")
 set(CMAKE_CXX_FLAGS_DEBUG "-g")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
+# ______________DEBUG AND RELEASE CONFIGS______________
+
+# for prod
+# add_compile_definitions("NDEBUG")
+
 # GLFW options
 
 add_subdirectory (libraries/glfw)
@@ -35,9 +40,7 @@ file (GLOB_RECURSE PROJECT_SOURCES src/*.cpp
 #                                   .gitignore
 #                                   .gitmodules)
 
-#
-# Organizing files
-#
+
 source_group ("headers" FILES ${PROJECT_HEADERS})
 # source_group ("shaders" FILES ${PROJECT_SHADERS})
 source_group ("sources" FILES ${PROJECT_SOURCES})

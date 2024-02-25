@@ -1,7 +1,6 @@
 {
   "files.associations": {
     "*.html": "html",
-    "cstdlib": "cpp",
-    "exception": "cpp"
+    "vector": "cpp"
   }
 }
