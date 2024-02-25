@@ -7,6 +7,7 @@
 
 #include <cstdlib>
 #include <iostream>
+#include <map>
 #include <stdexcept>
 #include <vector>
 
@@ -49,6 +50,7 @@ private:
     GLFWwindow* window = nullptr;
     VkInstance instance;
     VkDebugUtilsMessengerEXT debugMessenger;
+    VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
 
     void initWindow() {
         printf("Is debug: %d\n", ENABLE_VALIDATION_LAYERS);
@@ -73,6 +75,7 @@ private:
     void initVulkan() {
         createInstance();
         setupDebugMessenger();
+        getPhysicalDevice();
     };
 
     void mainLoop() {
@@ -231,5 +234,58 @@ private:
         vkEnumerateInstanceExtensionProperties(nullptr, &count, extensions.data());
 
         return extensions;
+    }
+
+    void getPhysicalDevice() {
+        uint32_t deviceCount = 0;
+        vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
+
+        if (deviceCount == 0) {
+            throw std::runtime_error("failed to find GPUs with Vulkan support!");
+        }
+
+        // first we always check the number of devices
+        // then allocate memory for them
+        std::vector<VkPhysicalDevice> devices(deviceCount);
+        vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
+
+        printf("Device count: %d\n", devices.size());
+
+        std::multimap<int, VkPhysicalDevice> candidates;
+
+        for (const auto& device : devices) {
+            int deviceScore = getDeviceScore(device);
+            candidates.insert(std::make_pair(deviceScore, device));
+        }
+
+        physicalDevice = candidates.rbegin()->second;
+
+        if (physicalDevice == VK_NULL_HANDLE) {
+            throw std::runtime_error("failed to find a gpu");
+        }
+    }
+
+    int getDeviceScore(VkPhysicalDevice device) {
+        int score = 0;
+
+        VkPhysicalDeviceProperties properties;
+        VkPhysicalDeviceFeatures features;
+        vkGetPhysicalDeviceProperties(device, &properties);
+        vkGetPhysicalDeviceFeatures(device, &features);
+
+        printf("[INFO]: Device name: %s\n", properties.deviceName);
+        printf("[INFO]: Geometry shader: %d\n", features.geometryShader);
+
+        if (properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
+            score += 1000;
+        }
+
+        score += properties.limits.maxImageDimension2D;
+
+        if (!features.geometryShader) {
+            return 0;
+        }
+
+        return score;
     }
 };
