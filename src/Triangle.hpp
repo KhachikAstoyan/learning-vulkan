@@ -8,6 +8,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <map>
+#include <optional>
 #include <stdexcept>
 #include <vector>
 
@@ -20,7 +21,40 @@ const std::vector<const char*> validationLayers = {
 #define ENABLE_VALIDATION_LAYERS false
 #endif
 
-VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger) {
+struct QueueFamilyIndices {
+    std::optional<uint32_t> graphicsFamily;
+    bool isComplete() {
+        return graphicsFamily.has_value();
+    }
+};
+
+QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device) {
+    QueueFamilyIndices indices;
+    uint32_t queueFamilyCount = 0;
+    vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
+
+    std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
+    vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
+
+    // need to find a queue that supports graphics
+    int i = 0;
+    for (const auto& queueFamily : queueFamilies) {
+        if (indices.isComplete()) {
+            break;
+        }
+
+        if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+            indices.graphicsFamily = i;
+        }
+
+        i++;
+    }
+
+    return indices;
+}
+
+VkResult
+CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger) {
     auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
 
     if (func != nullptr) {
@@ -254,8 +288,10 @@ private:
         std::multimap<int, VkPhysicalDevice> candidates;
 
         for (const auto& device : devices) {
-            int deviceScore = getDeviceScore(device);
-            candidates.insert(std::make_pair(deviceScore, device));
+            if (isDeviceSuitable(device)) {
+                int deviceScore = getDeviceScore(device);
+                candidates.insert(std::make_pair(deviceScore, device));
+            }
         }
 
         physicalDevice = candidates.rbegin()->second;
@@ -263,6 +299,12 @@ private:
         if (physicalDevice == VK_NULL_HANDLE) {
             throw std::runtime_error("failed to find a gpu");
         }
+    }
+
+    bool isDeviceSuitable(VkPhysicalDevice device) {
+        QueueFamilyIndices indices = findQueueFamilies(device);
+
+        return indices.isComplete();
     }
 
     int getDeviceScore(VkPhysicalDevice device) {
