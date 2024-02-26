@@ -1,6 +1,11 @@
 {
   "files.associations": {
     "*.html": "html",
-    "vector": "cpp"
+    "vector": "cpp",
+    "__split_buffer": "cpp",
+    "deque": "cpp",
+    "list": "cpp",
+    "string": "cpp",
+    "*.ipp": "cpp"
   }
 }
