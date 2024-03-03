@@ -8,6 +8,8 @@ set (CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_FLAGS "-Wall -Wextra")
 set(CMAKE_CXX_FLAGS_DEBUG "-g")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
+set(SHADERS_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/shaders")
+
 
 # ______________DEBUG AND RELEASE CONFIGS______________
 
@@ -31,27 +33,53 @@ file (GLOB_RECURSE PROJECT_SOURCES src/*.cpp
                                    src/*.cxx
                                    src/*.cc
                                    src/*.c)
-# file (GLOB_RECURSE PROJECT_SHADERS shaders/*.comp
-#                                    shaders/*.frag
-#                                    shaders/*.geom
-#                                    shaders/*.vert)
+
+file(MAKE_DIRECTORY ${SHADERS_OUTPUT_DIR})
+file (GLOB_RECURSE PROJECT_SHADERS "shaders/*.comp"
+                                   "shaders/*.frag"
+                                   "shaders/*.geom"
+                                   "shaders/*.glsl"
+                                   "shaders/*.vert")
 # file (GLOB         PROJECT_CONFIGS CMakeLists.txt
 #                                    README.rst
 #                                   .gitignore
 #                                   .gitmodules)
 
-
 source_group ("headers" FILES ${PROJECT_HEADERS})
-# source_group ("shaders" FILES ${PROJECT_SHADERS})
+source_group ("shaders" FILES ${PROJECT_SHADERS})
 source_group ("sources" FILES ${PROJECT_SOURCES})
 # source_group ("vendors" FILES ${VENDORS_SOURCES})
+
+add_custom_target(
+    shaders
+    COMMENT "Compiling shaders"
+    VERBATIM
+)
+
+foreach(SHADER_SOURCE ${PROJECT_SHADERS})
+  message(STATUS "Compiling shader: ${SHADER_FILENAME}"`)
+  get_filename_component(SHADER_FILENAME ${SHADER_SOURCE} NAME)
+  set(SHADER_OUTPUT_PATH "${SHADERS_OUTPUT_DIR}/${SHADER_FILENAME}.spv")
+
+  # Add a custom command to compile the shader
+  add_custom_command(
+      TARGET shaders
+      COMMAND glslc ${SHADER_SOURCE} -o ${SHADER_OUTPUT_PATH}
+      COMMENT "Compiling ${SHADER_FILENAME}"
+      DEPENDS ${SHADER_SOURCE}
+      VERBATIM
+  )
+endforeach()
+
 
 #
 # Set executable and target link libraries
 #
 add_executable (${PROJECT_NAME} ${PROJECT_SOURCES} ${PROJECT_HEADERS}
-                                ${PROJECT_SHADERS} ${PROJECT_CONFIGS}
+                                ${PROJECT_CONFIGS}
                                 ${VENDORS_SOURCES})
+add_dependencies(${PROJECT_NAME} shaders)
+
 target_link_libraries (${PROJECT_NAME}
                        glfw
                        glm
